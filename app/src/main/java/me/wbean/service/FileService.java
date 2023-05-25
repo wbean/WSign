@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 
 public class FileService {
@@ -22,12 +24,33 @@ public class FileService {
         return read(name + ".pub");
     }
 
+    public void deletePublicKey(String name) throws IOException{
+        File file = new File(dir, name + ".pub");
+        if (file.exists()) {
+            file.delete();
+        }
+    }
+
+    public List<String> getPublicKeyList() throws IOException{
+        List<String> list = new ArrayList<>();
+        File[] files = dir.listFiles();
+        for (File file : files) {
+            if (file.getName().endsWith(".pub")) {
+                list.add(file.getName().replace(".pub", ""));
+            }
+        }
+        return list;
+    }
+
     public String getSelfPrivateKey() throws IOException {
         return read("pri.main");
     }
 
     public String getSelfPublicKey() throws IOException {
         return read("pub.main");
+    }
+    public String getSelfName() throws IOException {
+        return read("name.main");
     }
 
     public void writeSelfKeyPair(String name, String publicKey, String privateKey) throws IOException {

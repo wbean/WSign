@@ -4,7 +4,9 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -31,7 +33,7 @@ class VerifyActivity : ComponentActivity() {
             WSignTheme {
                 // A surface container using the 'background' color from the theme
                 Surface(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier.fillMaxWidth().fillMaxHeight(0.5f),
                     color = MaterialTheme.colorScheme.background
                 ) {
                     VerifyGreeting(onClickButton = {
@@ -50,7 +52,7 @@ class VerifyActivity : ComponentActivity() {
 @Composable
 fun VerifyGreeting(onClickButton: (text: String) -> Boolean, modifier: Modifier = Modifier) {
     var text by remember { mutableStateOf(TextFieldValue()) }
-    var displayResult by remember { mutableStateOf("结果：") }
+    var displayResult by remember { mutableStateOf("验签结果：") }
 
     Column(modifier = modifier) {
         TextField(
@@ -61,7 +63,7 @@ fun VerifyGreeting(onClickButton: (text: String) -> Boolean, modifier: Modifier 
             trailingIcon = {
                 Button(onClick = {
                     var result = onClickButton(text.text)
-                    displayResult = if (result) "验证成功" else "验证失败"
+                    displayResult = if (result) "验签结果：成功" else "验签结果：失败"
                 }) {
                     Text(text = "验证签名")
                 }

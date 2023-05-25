@@ -6,7 +6,10 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -47,8 +50,10 @@ class SignActivity : ComponentActivity() {
                             println("sign: $sign")
                             val clipboard: ClipboardManager =
                                 getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
-                            val clip = ClipData.newPlainText("signed", "$message|$sign")
+                            var result = "$message|$sign"
+                            val clip = ClipData.newPlainText("signed", result)
                             clipboard.setPrimaryClip(clip)
+                            result
                         }
                     )
                 }
@@ -59,25 +64,35 @@ class SignActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SignGreeting(onClickButton: (message: String) -> Unit,
+fun SignGreeting(onClickButton: (message: String) -> String,
                  modifier: Modifier = Modifier) {
     var text by remember { mutableStateOf(TextFieldValue()) }
+    var displayResult by remember {
+        mutableStateOf("")
+    }
     Column(modifier = modifier) {
-        TextField(
-            label = { Text(text = "请输入需要签名的信息") },
-            value = text, onValueChange = { text = it },
-            keyboardOptions = KeyboardOptions.Default.copy(
-                keyboardType = KeyboardType.Text
-            ),
-            modifier = Modifier.fillMaxSize(),
-            trailingIcon = {
-                Button(onClick = {
-                    onClickButton(text.text)
-                }) {
-                    Text(text = "签名")
+        Row {
+            TextField(
+                label = { Text(text = "请输入需要签名的信息") },
+                value = text, onValueChange = { text = it },
+                keyboardOptions = KeyboardOptions.Default.copy(
+                    keyboardType = KeyboardType.Text
+                ),
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth().fillMaxHeight(0.5f),
+                trailingIcon = {
+                    Button(onClick = {
+                        var result = onClickButton(text.text)
+                        displayResult = "签名结果:\n$result\n\n 已复制到剪贴板,请直接在聊天软件粘贴并发送"
+                    }) {
+                        Text(text = "签名")
+                    }
                 }
-            }
-        )
+            )
+        }
+        Row {
+            Text(text = displayResult)
+        }
     }
 }
 
@@ -85,6 +100,6 @@ fun SignGreeting(onClickButton: (message: String) -> Unit,
 @Composable
 fun SignGreetingPreview() {
     WSignTheme {
-        SignGreeting(onClickButton = {})
+        SignGreeting(onClickButton = {""})
     }
 }
