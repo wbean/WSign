@@ -28,8 +28,10 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import me.wbean.component.NewKeyDialog
 import me.wbean.service.FileService
+import me.wbean.service.RSAService
 import me.wbean.ui.theme.WSignTheme
 
 class SettingActivity : ComponentActivity() {
@@ -56,8 +58,11 @@ class SettingActivity : ComponentActivity() {
                             result
                         },
                         genMyNewKey = {
-                            NewKeyDialog().show(fileService, this)
-                            Pair(fileService.selfName, fileService.selfPublicKey)
+                            val generateKey = RSAService.generateKey()
+                            val pubKeyStr = RSAService.encodePublicKey(generateKey.public)
+                            val priKeyStr = RSAService.encodePrivateKey(generateKey.private)
+                            fileService.writeSelfKeyPair(it, pubKeyStr, priKeyStr)
+                            fileService.selfPublicKey
                         },
                         addNewPublicKay = {
                             val (name, key) = it.split("|")
@@ -75,11 +80,48 @@ class SettingActivity : ComponentActivity() {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NewKeyDialogV2(){
-    Dialog(onDismissRequest = { /*TODO*/ }) {
-        
+fun NewKeyDialogV2(showDialog: Boolean,
+                   setShowDialog: (Boolean) -> Unit,
+                   confirmNewName: (String) -> Unit,
+): String{
+
+    var nameTextField by remember {
+        mutableStateOf(TextFieldValue(""))
     }
+
+    if (showDialog) {
+        Dialog(
+            onDismissRequest = { setShowDialog(false) },
+            properties = DialogProperties(),
+        ) {
+            Column {
+                Row {
+                    TextField(
+                        label = { Text(text = "输入新名称") },
+                        value = nameTextField, onValueChange = { nameTextField = it }
+                    )
+                }
+                Row {
+                    Button(onClick = {
+                        if (nameTextField.text == "") {
+                            println("empty name")
+                            return@Button
+                        }
+                        confirmNewName(nameTextField.text)
+                        setShowDialog(false)
+                    }) {
+                        Text(text = "生成")
+                    }
+                    Button(onClick = { setShowDialog(false) }) {
+                        Text(text = "取消")
+                    }
+                }
+            }
+        }
+    }
+    return nameTextField.text
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -88,7 +130,7 @@ fun SettingGreeting(name:String,
                     myPublicKey: String,
                     publicKeyList: List<String>,
                     copyMyPublicKey: () -> String,
-                    genMyNewKey: () -> Pair<String, String>,
+                    genMyNewKey: (String) -> String,
                     addNewPublicKay: (String) -> List<String>,
                     deletePublicKey: (String) -> List<String>,
                     modifier: Modifier = Modifier) {
@@ -108,6 +150,25 @@ fun SettingGreeting(name:String,
         mutableStateOf(publicKeyList)
     }
 
+    var showDialog by remember {
+        mutableStateOf(true)
+    }
+
+    var setShowDialog: (Boolean) -> Unit = {
+        showDialog = it
+    }
+
+    var confirmNewName: (String) -> Unit = {
+        myName = it
+        val publicKey = genMyNewKey(it)
+        myPublicKeyText = publicKey
+    }
+
+    NewKeyDialogV2(showDialog = showDialog,
+        setShowDialog = setShowDialog,
+        confirmNewName = confirmNewName,
+    )
+
     Column(modifier = modifier) {
         Text(text="名称:$myName")
         Text(text = "公钥:$myPublicKeyText")
@@ -116,9 +177,7 @@ fun SettingGreeting(name:String,
                 Text(text = "复制我的公钥")
             }
             Button(onClick = {
-                val (name, key) = genMyNewKey()
-                myName = name
-                myPublicKeyText = key
+                setShowDialog(true)
             }) {
                 Text(text = "重新生成我的公私钥")
             }
@@ -161,6 +220,6 @@ fun SettingGreeting(name:String,
 fun SettingGreetingPreview() {
     WSignTheme {
         SettingGreeting("wbean", "1234567890", ArrayList(),
-            copyMyPublicKey = { "1234567890" }, genMyNewKey = {Pair("","")}, addNewPublicKay = {ArrayList()}, deletePublicKey = {ArrayList()} )
+            copyMyPublicKey = { "1234567890" }, genMyNewKey = {""}, addNewPublicKay = {ArrayList()}, deletePublicKey = {ArrayList()} )
     }
 }
